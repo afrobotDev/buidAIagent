@@ -12,19 +12,21 @@ def get_files_info(working_directory, directory="."):
         if not os.path.isdir(target_dir):
             return f'Error: {directory} is not a directory'
 
-        def iterate_over_dir(target_dir): 
-            contents_target_dir = os.listdir(target_dir) 
-            for content in contents_target_dir: 
-                full_path = os.path.join(target_dir, content) 
-                is_dir = os.path.isdir(full_path) 
+        lines = []
 
-                if is_dir:
-                    return iterate_over_dir(full_path) 
+        contents_target_dir = os.listdir(target_dir) 
+        for content in contents_target_dir: 
+            full_path = os.path.join(target_dir, content) 
+            is_dir = os.path.isdir(full_path) 
+            file_size = os.path.getsize(content)
 
-                if os.path.isfile(content):
-                    file_size = os.path.getsize(content) 
-                    return f'{content}: file_size={file_size} bytes, is_dir={is_dir}'
-    
+            lines.append(
+                    f'{content}: file_size={file_size} bytes, is_dir={is_dir}'
+                    )
+
+        return "\n".join(lines)
+
+
 
     except Exception as e:
         return f"Error: {e}"
