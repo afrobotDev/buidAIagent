@@ -19,7 +19,7 @@ def write_file(working_directory, filepath, content):
 
         with open(target_file, 'w', encoding='UTF-8') as f:
             new_content = f.write(content)
-            return f'Successfully wrote to "{file_path}" ({len(content)} characters written)'
+            return f'Successfully wrote to "{filepath}" ({len(content)} characters written)'
 
 
 
