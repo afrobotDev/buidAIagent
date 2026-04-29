@@ -21,7 +21,7 @@ def get_files_info(working_directory, directory="."):
             file_size = os.path.getsize(full_path)
 
             lines.append(
-                    f'{content}: file_size={file_size} bytes, is_dir={is_dir}'
+                    f"Result for '{directory}:'\n{content}: file_size={file_size} bytes, is_dir={is_dir}"
                     )
 
         return "\n".join(lines)
