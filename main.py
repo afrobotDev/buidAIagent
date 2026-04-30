@@ -1,10 +1,22 @@
 import os
+import sys
 import argparse
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 from prompt import system_prompt 
-from functions.get_files_info import available_functions   
+from functions.get_files_info import schema_get_files_info
+from functions.get_file_content import schema_get_file_content
+from functions.write_file import schema_write_file
+from functions.run_python_file import schema_run_python_file
+
+
+available_functions = [
+    schema_get_files_info,
+    schema_get_file_content,
+    schema_write_file,
+    schema_run_python_file,
+]
 
 
 load_dotenv()
@@ -31,14 +43,14 @@ def main():
     # request
     try:
         response = client.models.generate_content(
-                model='gemini-2.5-flash',
-                contents=messages,
-                config=types.GenerateContentConfig(
+            model='gemini-2.5-flash',
+            contents=messages,
+            config=types.GenerateContentConfig(
 
-                    tools=[available_functions],
-                    system_instruction=system_prompt
+                tools=[types.Tool(function_declarations=available_functions)],
+                system_instruction=system_prompt
 
-                    ),
+            ),
         )
 
     except Exception as e:
