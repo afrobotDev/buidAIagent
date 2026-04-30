@@ -10,7 +10,7 @@ def run_python_file(working_directory, filepath, args=None):
             return f'Error: Cannot execute "{filepath}" as it is outside the permitted working directory'
 
         if not os.path.isfile(target_file):
-            return f'Error: File not found or is not a regular file: "{filepath}"'
+            return f'Error: "{file_path}" does not exist or is not a regular file'
 
         if not filepath.endswith('py'):
             return f'Error: {filepath} is not a Python file'
