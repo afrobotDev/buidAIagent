@@ -3,9 +3,11 @@ import argparse
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
+from prompt import system_prompt 
+   
+
 
 load_dotenv()
-
 
 # API Key
 api_key = os.environ.get("GEMINI_API_KEY")
@@ -31,6 +33,7 @@ def main():
         response = client.models.generate_content(
                 model='gemini-2.5-flash',
                 contents=messages
+                config=types.GenerateContentConfig(system_instruction=system_prompt)
                 )
 
     except Exception as e:
