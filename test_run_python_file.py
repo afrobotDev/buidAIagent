@@ -27,7 +27,7 @@ print("-----------------------------------")
 
 filepath = "lorem.txt"
 print(f"Result for '{filepath}' file:")
-print(run_python_file("calculator", filepath)))
+print(run_python_file("calculator", filepath))
 print("-----------------------------------")
 
 
