@@ -16,6 +16,8 @@ schema_get_files_info = types.FunctionDeclaration(
     ),
 )
 
+available_functions = [schema_get_files_info]
+
 
 def get_files_info(working_directory, directory="."):
     try:
