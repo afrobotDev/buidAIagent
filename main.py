@@ -69,9 +69,14 @@ def main():
             print(f'User prompt: {args.user_prompt}')
             print(f'Prompt tokens: {usage.prompt_token_count}')
             print(f'Response tokens: {usage.candidates_token_count}')
+    
+    function_call = response.function_calls 
+    if function_call:
+        for call in function_call:
+            print(f"Calling function: {call.name}({call.args})")
 
-
-    print(response.text)
+    else:
+        print(response.text)
 
 
 
