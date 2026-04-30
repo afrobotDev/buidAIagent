@@ -18,8 +18,9 @@ available_functions = [
     schema_run_python_file,
 ]
 
-
 load_dotenv()
+
+
 
 # API Key
 api_key = os.environ.get("GEMINI_API_KEY")
