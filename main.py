@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 from prompt import system_prompt 
-   
+from functions.get_files_info import available_functions   
 
 
 load_dotenv()
@@ -33,8 +33,13 @@ def main():
         response = client.models.generate_content(
                 model='gemini-2.5-flash',
                 contents=messages,
-                config=types.GenerateContentConfig(system_instruction=system_prompt),
-                )
+                config=types.GenerateContentConfig(
+
+                    tools=[available_functions],
+                    system_instruction=system_prompt
+
+                    ),
+        )
 
     except Exception as e:
         print(f"Request failed: {e}")
