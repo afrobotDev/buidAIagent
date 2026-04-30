@@ -13,7 +13,7 @@ def run_python_file(working_directory, filepath, args=None):
             return f'Error: "{filepath}" does not exist or is not a regular file'
 
         if not filepath.endswith('py'):
-            return f'Error: {filepath} is not a Python file'
+            return f'Error: "{file_path}" is not a Python file'
 
         command = ['python', target_file] 
         if args:
