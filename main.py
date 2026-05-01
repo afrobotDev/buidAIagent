@@ -37,9 +37,7 @@ def main():
     parser.add_argument("user_prompt", type=str, help="Prompt to the Chatbot")
     parser.add_argument("--verbose", action="store_true", help="Enable verbose output")
     args = parser.parse_args()
-
     messages = [types.Content(role="user", parts=[types.Part(text=args.user_prompt)])]
-
 
 
     # request
@@ -48,17 +46,14 @@ def main():
             model='gemini-2.5-flash',
             contents=messages,
             config=types.GenerateContentConfig(
-
                 tools=[types.Tool(function_declarations=available_functions)],
                 system_instruction=system_prompt
-
             ),
         )
 
     except Exception as e:
         print(f"Request failed: {e}")
         sys.exit(1)
-
 
 
     # usage_metadata
@@ -78,32 +73,27 @@ def main():
             parts = getattr(call_result, "parts", [])
             
             if not parts:
-                raise Exception("Error: empty parts")
+                print("Error: empty parts")
 
-            part = parts[0]
-            func_resp = getattr(part, "function_response", None)
+            func_resp = getattr(parts[0], "function_response", None)
             if not func_resp:
                 print("Function returned no response.")
                 continue
 
-            try:
-                resp = func_resp.response if hasattr(
-                    func_resp, "response") else func_resp                
-                
-                if isinstance(resp, dict):
-                    if "error" in resp:
-                        print(f"Error: {resp['error']}")
+            resp = getattr(func_resp, "response", func_resp)                
+            if isinstance(resp, dict):
+                if "error" in resp:
+                    print(f"Error: {resp['error']}")
                     
-                    elif "result" in resp:
-                          print(resp["result"])
-                    else:
-                        print(resp)
-                        
+                elif "result" in resp:
+                    print(resp["result"])
+
                 else:
                     print(resp)
+                        
+            else:
+                print(resp)
                     
-            except Exception:
-                print(func_resp)
 
     else:
         print(response.text)
