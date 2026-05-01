@@ -10,7 +10,7 @@ def call_function(function_call, verbose=False):
         print(f"Calling function: {function_name}({function_call.args})")
 
     else:
-         print(f" - Calling function: {function_name}")
+        print(f" - Calling function: {function_name}")
 
     function_map = {
     "get_file_content": get_file_content,
@@ -33,14 +33,16 @@ def call_function(function_call, verbose=False):
     args = dict(function_call.args) if function_call.args else {}
     args["working_directory"] = "./calculator"
 
-    function_result = function_map["get_file_content"](**args)
+    # Call the requested function from the map
+    func = function_map[function_name]
+    result = func(**args)
 
     return types.Content(
             role="tool",
             parts=[
                 types.Part.from_function_response(
                     name=function_name,
-                    response={"result": function_result},
+                    response={"result": result},
                     )
                 ],
             )
