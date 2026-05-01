@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 from prompt import system_prompt 
+from functions.call_functions import call_function
 from functions.get_files_info import schema_get_files_info
 from functions.get_file_content import schema_get_file_content
 from functions.write_file import schema_write_file
@@ -71,10 +72,29 @@ def main():
             print(f'Prompt tokens: {usage.prompt_token_count}')
             print(f'Response tokens: {usage.candidates_token_count}')
     
-    function_call = response.function_calls 
-    if function_call:
-        for call in function_call:
-            print(f"Calling function: {call.name}({call.args})")
+    func_calls = response.function_calls
+    if func_calls:
+        for func_call in func_calls:
+            call_result = call_function(func_call, verbose=args.verbose)
+
+            parts = getattr(call_result, "parts", None)
+            if not parts:
+                raise Exception("Error: empty parts")
+
+            part = parts[0]
+            func_resp = getattr(part, "function_response", None)
+            if not func_resp:
+                print("Function returned no response.")
+                continue
+
+            try:
+                resp = getattr(func_resp, "response", func_resp)
+                if isinstance(resp, dict):
+                    print(resp.get("result") or resp.get("error") or resp)
+                else:
+                    print(resp)
+            except Exception:
+                print(func_resp)
 
     else:
         print(response.text)
