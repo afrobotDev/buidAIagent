@@ -25,7 +25,7 @@ load_dotenv()
 
 # API Key
 api_key = os.environ.get("GEMINI_API_KEY")
-if api_key is None:
+if not api_key:
     raise RuntimeError("API Key not found. Check .env file..")
 
 client = genai.Client(api_key=api_key)
@@ -66,18 +66,17 @@ def main():
     if usage is None:
         raise RuntimeError('Response missing usage_metadata..')
 
-    else:
-        if args.verbose:
-            print(f'User prompt: {args.user_prompt}')
-            print(f'Prompt tokens: {usage.prompt_token_count}')
-            print(f'Response tokens: {usage.candidates_token_count}')
+    if args.verbose:
+        print(f'User prompt: {args.user_prompt}')
+        print(f'Prompt tokens: {usage.prompt_token_count}')
+        print(f'Response tokens: {usage.candidates_token_count}')
     
     func_calls = response.function_calls
     if func_calls:
         for func_call in func_calls:
             call_result = call_function(func_call, verbose=args.verbose)
-
-            parts = getattr(call_result, "parts", None)
+            parts = getattr(call_result, "parts", [])
+            
             if not parts:
                 raise Exception("Error: empty parts")
 
@@ -88,11 +87,21 @@ def main():
                 continue
 
             try:
-                resp = getattr(func_resp, "response", func_resp)
+                resp = func_resp.response if hasattr(
+                    func_resp, "response") else func_resp                
+                
                 if isinstance(resp, dict):
-                    print(resp.get("result") or resp.get("error") or resp)
+                    if "error" in resp:
+                        print(f"Error: {resp['error']}")
+                    
+                    elif "result" in resp:
+                          print(resp["result"])
+                    else:
+                        print(resp)
+                        
                 else:
                     print(resp)
+                    
             except Exception:
                 print(func_resp)
 
