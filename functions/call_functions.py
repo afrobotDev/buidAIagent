@@ -15,7 +15,7 @@ def call_function(function_call, verbose=False):
     function_map = {
     "get_file_content": get_file_content,
     "get_files_info": get_files_info,
-    "write_file": write_files_info,
+    "write_file": write_file,
     "run_python_file": run_python_file,
     }
 
