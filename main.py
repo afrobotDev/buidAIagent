@@ -73,26 +73,31 @@ def main():
             parts = getattr(call_result, "parts", [])
             
             if not parts:
-                print("Error: empty parts")
+                raise Exception("Error: empty parts")
 
             func_resp = getattr(parts[0], "function_response", None)
             if not func_resp:
-                print("Function returned no response.")
-                continue
+                raise Exception("Function returned no response.")
 
             resp = getattr(func_resp, "response", func_resp)                
+            function_results = []
             if isinstance(resp, dict):
                 if "error" in resp:
-                    print(f"Error: {resp['error']}")
+                    raise Exception(f"Error: {resp['error']}")
                     
                 elif "result" in resp:
-                    print(resp["result"])
+                    function_results.append(resp["result"])
+                    if args.verbose:
+                        print(f"-> {resp["result"]}")
 
                 else:
                     print(resp)
                         
             else:
                 print(resp)
+
+            
+            
                     
 
     else:
