@@ -102,7 +102,8 @@ def main():
                 else:
                     print(resp)
 
-                messages.append(types.Content(role="user",parts=function_results))
+                if function_results:
+                    messages.append(types.Content(role="user",parts=function_results))
                 
         else:
             if not response.text:
