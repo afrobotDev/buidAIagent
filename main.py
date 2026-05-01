@@ -57,10 +57,10 @@ def main():
             sys.exit(1)
 
 
-        chat_history = response.candidates
-        if chat_history:
-            for candidate in chat_history:
-                messages.append(candiate.content)
+        if response.candidates:
+            candidate = response.candidates[0]
+            if candidate.content and candidate.content.parts:
+                messages.append(types.Content(role="model", parts=candidate.content.parts))
 
 
         # usage_metadata
@@ -79,15 +79,15 @@ def main():
         if func_calls:
             for func_call in func_calls:
                 call_result = call_function(func_call, verbose=args.verbose)
-                parts = getattr(call_result, "parts", [])
+                parts = call_result.parts
                 if not parts:
                     raise Exception("Error: empty parts")
 
-                func_resp = getattr(parts[0], "function_response", None)
+                func_resp = parts[0].function_response
                 if not func_resp:
                     raise Exception("Function returned no response.")
 
-                resp = getattr(func_resp, "response", func_resp)                
+                resp = func_resp.response                
                 function_results = []
                 if isinstance(resp, dict):
                     if "error" in resp:
@@ -102,7 +102,7 @@ def main():
                 else:
                     print(resp)
 
-                messages.append(type.Content(role="user",parts=function_results))
+                messages.append(types.Content(role="user",parts=function_results))
                 
         else:
             print(response.text)
