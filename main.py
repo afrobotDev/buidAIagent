@@ -105,8 +105,13 @@ def main():
                 messages.append(types.Content(role="user",parts=function_results))
                 
         else:
+            if not response.text:
+                print("Error: No response after maximum iteration")
+                sys.exit(1)
+
             print(response.text)
             return
+    
 
 
 
