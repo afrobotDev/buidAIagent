@@ -41,68 +41,72 @@ def main():
 
 
     # request
-    try:
-        response = client.models.generate_content(
-            model='gemini-2.5-flash',
-            contents=messages,
-            config=types.GenerateContentConfig(
-                tools=[types.Tool(function_declarations=available_functions)],
-                system_instruction=system_prompt
-            ),
-        )
+    for _ in range(20):
+        try:
+            response = client.models.generate_content(
+                    model='gemini-2.5-flash',
+                    contents=messages,
+                    config=types.GenerateContentConfig(
+                        tools=[types.Tool(function_declarations=available_functions)],
+                        system_instruction=system_prompt
+                        ),
+                    )
 
-    except Exception as e:
-        print(f"Request failed: {e}")
-        sys.exit(1)
+        except Exception as e:
+            print(f"Request failed: {e}")
+            sys.exit(1)
 
 
-    # usage_metadata
-    usage = response.usage_metadata
-    if usage is None:
-        raise RuntimeError('Response missing usage_metadata..')
+        chat_history = response.candidates
+        if chat_history:
+            for candidate in chat_history:
+                messages.append(candiate.content)
 
-    if args.verbose:
-        print(f'User prompt: {args.user_prompt}')
-        print(f'Prompt tokens: {usage.prompt_token_count}')
-        print(f'Response tokens: {usage.candidates_token_count}')
-    
-    func_calls = response.function_calls
-    if func_calls:
-        for func_call in func_calls:
-            call_result = call_function(func_call, verbose=args.verbose)
-            parts = getattr(call_result, "parts", [])
-            
-            if not parts:
-                raise Exception("Error: empty parts")
 
-            func_resp = getattr(parts[0], "function_response", None)
-            if not func_resp:
-                raise Exception("Function returned no response.")
+        # usage_metadata
+        usage = response.usage_metadata
+        if usage is None:
+            raise RuntimeError('Response missing usage_metadata..')
 
-            resp = getattr(func_resp, "response", func_resp)                
-            function_results = []
-            if isinstance(resp, dict):
-                if "error" in resp:
-                    raise Exception(f"Error: {resp['error']}")
+        if args.verbose:
+            print(f'User prompt: {args.user_prompt}')
+            print(f'Prompt tokens: {usage.prompt_token_count}')
+            print(f'Response tokens: {usage.candidates_token_count}')
+
+
+        # call functions 
+        func_calls = response.function_calls
+        if func_calls:
+            for func_call in func_calls:
+                call_result = call_function(func_call, verbose=args.verbose)
+                parts = getattr(call_result, "parts", [])
+                if not parts:
+                    raise Exception("Error: empty parts")
+
+                func_resp = getattr(parts[0], "function_response", None)
+                if not func_resp:
+                    raise Exception("Function returned no response.")
+
+                resp = getattr(func_resp, "response", func_resp)                
+                function_results = []
+                if isinstance(resp, dict):
+                    if "error" in resp:
+                        raise Exception(f"Error: {resp['error']}")
                     
-                elif "result" in resp:
-                    function_results.append(resp["result"])
-                    if args.verbose:
-                        print(f"-> {resp["result"]}")
-
+                    elif "result" in resp:
+                        function_results.append(resp["result"])
+                        if args.verbose:
+                            print(f"-> {resp["result"]}")
+                    else:
+                        print(resp)
                 else:
                     print(resp)
-                        
-            else:
-                print(resp)
 
-            
-            
-                    
-
-    else:
-        print(response.text)
-
+                messages.append(type.Content(role="user",parts=function_results))
+                
+        else:
+            print(response.text)
+            return
 
 
 
