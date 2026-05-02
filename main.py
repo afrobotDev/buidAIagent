@@ -41,7 +41,7 @@ def main():
 
 
     # request
-    for _ in range(20):
+    for _ in range(5):
         try:
             response = client.models.generate_content(
                     model='gemini-2.5-flash',
@@ -76,6 +76,7 @@ def main():
 
         # call functions 
         func_calls = response.function_calls
+        function_results = []
         if func_calls:
             for func_call in func_calls:
                 call_result = call_function(func_call, verbose=args.verbose)
@@ -88,7 +89,7 @@ def main():
                     raise Exception("Function returned no response.")
 
                 resp = func_resp.response                
-                function_results = []
+                
                 if isinstance(resp, dict):
                     if "error" in resp:
                         raise Exception(f"Error: {resp['error']}")
@@ -100,10 +101,19 @@ def main():
                     else:
                         print(resp)
                 else:
-                    print(resp)
+                    function_results.append(str(resp))
+                    print(str(resp))
+                    
+                    
+        if function_results:
+                messages.append(
+                    types.Content(
+                        role="user",
+                        parts=[types.Part(text=str(result)) for result in function_results]
+                    )
+                )
 
-                if function_results:
-                    messages.append(types.Content(role="user",parts=function_results))
+                
                 
         else:
             if not response.text:
@@ -112,6 +122,7 @@ def main():
 
             print(response.text)
             return
+        
     
 
 
