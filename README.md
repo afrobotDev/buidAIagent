@@ -1,176 +1,171 @@
-# AIAgent (Gemini-Powered Coding Agent)
+# AIAgent
 
-A lightweight command-line coding agent built with **Google Gemini function calling**.
+A lightweight command-line coding agent powered by **Google Gemini function calling**. It accepts natural-language prompts, inspects and edits files in a sandboxed workspace, runs Python scripts, and iterates through tool-calling rounds to produce answers.
 
-It accepts a natural-language prompt, can inspect/edit files in a sandboxed workspace (`./calculator`), run Python scripts, and iterate for up to 5 tool-calling rounds before returning a final answer.
+## How It Works
 
----
+```
+User Prompt ──> Gemini LLM ──> Function Call? ──> Execute Tool Locally
+                    ^                                    |
+                    └────────── Feed Result Back <───────┘
+                                      │
+                              No More Calls
+                                      v
+                               Final Answer
+```
 
-## What this project does
+The agent loop sends your prompt to Gemini, which may request tool calls (read files, write files, run scripts). Each tool result is fed back to the model until it produces a final natural-language response — up to **5 iterations** per request.
 
-This repository demonstrates a compact “agent loop” architecture:
+## Quick Start
 
-1. Send a user prompt to Gemini.
-2. Let Gemini request tools (`get_files_info`, `get_file_content`, `write_file`, `run_python_file`).
-3. Execute the requested tool locally.
-4. Feed tool output back to the model.
-5. Repeat until the model returns a natural-language answer.
+```bash
+# 1. Clone and enter the project
+git clone <repo-url> && cd aiagent
 
-The project is intentionally small and easy to inspect, making it a useful starter template for building more capable software agents.
+# 2. Install dependencies
+pip install -e .
 
----
+# 3. Set your Gemini API key
+echo "GEMINI_API_KEY=your_key_here" > .env
 
-## Core features
+# 4. Run the agent
+python main.py "List files and explain what this calculator does"
+```
 
-- **Gemini function calling integration** via `google-genai`.
-- **Filesystem introspection** in a controlled working directory.
-- **Safe file read/write guards** using path boundary checks.
-- **Python execution tool** with timeout and structured output capture.
-- **Verbose token/debug output** for development visibility.
-- **Included sample workspace** (`calculator/`) the agent can operate on.
+## Prerequisites
 
----
-
-## Repository layout
-
-```text
-.
-├── main.py                       # Agent entrypoint + loop
-├── prompt.py                     # System prompt for model behavior
-├── config.py                     # Shared config (e.g., max chars for file reads)
-├── functions/
-│   ├── call_functions.py         # Dispatches model-requested tools
-│   ├── get_files_info.py         # List directory entries
-│   ├── get_file_content.py       # Read file content with truncation
-│   ├── write_file.py             # Write file content
-│   └── run_python_file.py        # Execute Python files and capture output
-├── calculator/                   # Tool sandbox / example codebase
-│   ├── main.py                   # Calculator CLI
-│   ├── tests.py                  # Unit tests for calculator behavior
-│   ├── lorem.txt
-│   └── pkg/
-│       ├── calculator.py         # Expression evaluator
-│       ├── render.py             # JSON output formatting
-│       └── morelorem.txt
-├── test_*.py                     # Script-style tool behavior checks
-├── pyproject.toml                # Project metadata and dependencies
-└── uv.lock                       # Locked dependency resolution
-
----
-
-## Requirements
-
-- **Python 3.13+**
-- A **Gemini API key**
-
-Dependencies (pinned in `pyproject.toml`):
-
-- `google-genai==1.12.1`
-- `python-dotenv==1.1.0`
-
----
+- **Python 3.13+** (check with `python --version`)
+- A **Google Gemini API key** ([get one here](https://aistudio.google.com/apikey))
 
 ## Installation
 
-### Option A: pip
-
+**pip:**
 ```bash
 pip install -e .
 ```
 
-### Option B: uv
-
+**uv:**
 ```bash
 uv pip install -e .
 ```
 
----
+Dependencies are pinned in `pyproject.toml`:
+
+| Package | Version | Purpose |
+|---------|---------|---------|
+| `google-genai` | 1.12.1 | Gemini API client |
+| `python-dotenv` | 1.1.0 | `.env` file loading |
 
 ## Configuration
 
-Create a `.env` file at repository root:
+Create a `.env` file at the project root:
 
 ```env
 GEMINI_API_KEY=your_api_key_here
 ```
 
-If the key is missing, `main.py` exits with:
-
-```text
+If the key is missing, the agent exits with:
+```
 RuntimeError: API Key not found. Check .env file..
 ```
 
----
+### Config Constants
+
+| Constant | File | Default | Description |
+|----------|------|---------|-------------|
+| `MAX_CHARS` | `config.py` | `10000` | Max characters returned when reading files |
+| Sandbox path | `functions/call_functions.py` | `./calculator` | Directory the agent can access |
+| Model | `main.py` | `gemini-2.5-flash` | Gemini model used |
+| Max iterations | `main.py` | `5` | Tool-call rounds per request |
+| Exec timeout | `run_python_file.py` | `30s` | Subprocess timeout for Python execution |
 
 ## Usage
 
 ### Basic
-
 ```bash
 python main.py "Refactor calculator/main.py for clearer error messages"
 ```
 
-### Verbose mode
-
+### Verbose Mode
 ```bash
 python main.py "Add tests for division edge cases" --verbose
 ```
 
-Verbose mode prints:
-
+Verbose mode outputs:
 - Original user prompt
-- Prompt token count
-- Response token count
-- Tool invocation details
+- Prompt and response token counts
+- Tool invocation details and results
 
----
+### Example Prompts
 
-## How the agent is scoped
-
-Tool execution is constrained to:
-
-```text
-./calculator
+```bash
+python main.py "List files and explain what this calculator does"
+python main.py "Fix failing behavior in pkg/calculator.py and update tests"
+python main.py "Run calculator tests and summarize failures"
+python main.py "Add a README inside calculator/ explaining its API"
 ```
 
-This is enforced in `functions/call_functions.py` by injecting:
+## Project Structure
 
-- `working_directory = "./calculator"`
+```
+aiagent/
+├── main.py                     # Entrypoint — CLI parsing, Gemini client, agent loop
+├── prompt.py                   # System prompt defining agent persona
+├── config.py                   # Shared constants (MAX_CHARS)
+├── .env                        # API key (gitignored)
+├── pyproject.toml              # Project metadata and dependencies
+├── uv.lock                     # Locked dependency resolution
+│
+├── functions/                  # Tool implementations
+│   ├── call_functions.py       # Dispatch: maps function names → implementations
+│   ├── get_files_info.py       # List directory entries with metadata
+│   ├── get_file_content.py     # Read file content (truncated at MAX_CHARS)
+│   ├── write_file.py           # Write content to files
+│   └── run_python_file.py      # Execute Python scripts (30s timeout)
+│
+├── calculator/                 # Sandboxed workspace the agent operates on
+│   ├── main.py                 # Calculator CLI app
+│   ├── tests.py                # Unit tests (unittest)
+│   ├── lorem.txt
+│   └── pkg/
+│       ├── calculator.py       # Infix expression evaluator
+│       ├── render.py           # JSON output formatter
+│       └── morelorem.txt
+│
+└── test_*.py                   # Script-style tool behavior checks
+```
 
-So even though you run the agent from repo root, the model’s tools read/write/execute within the calculator workspace.
+## Available Tools
 
----
+The agent has access to four tools, all constrained to the `./calculator` sandbox:
 
-## Available tools (function declarations)
-
-### 1) `get_files_info(directory=".")`
+### `get_files_info(directory=".")`
 Lists directory entries with file size and `is_dir` flag.
 
-### 2) `get_file_content(filepath)`
-Reads file content from the sandbox directory, limited by `MAX_CHARS` from `config.py`.
-If truncated, a suffix note is appended.
+### `get_file_content(filepath)`
+Reads file content, truncated at `MAX_CHARS` (10,000 chars). A notice is appended if content was truncated.
 
-### 3) `write_file(filepath, content)`
-Writes text content to a target file path (inside sandbox).
+### `write_file(filepath, content)`
+Writes text to a file inside the sandbox. Auto-creates parent directories.
 
-### 4) `run_python_file(filepath, args=[])`
-Runs a Python script with optional CLI args, timeout (30s), and returns formatted command/stdout/stderr text.
+### `run_python_file(filepath, args=[])`
+Runs a Python script with optional CLI arguments. 30-second timeout. Returns stdout, stderr, and exit code.
 
----
+## Security
 
-## Example tasks you can run
+All tools enforce **path boundary validation** using `os.path.commonpath()`:
 
-- “List files and explain what this calculator does.”
-- “Fix failing behavior in `pkg/calculator.py` and update tests.”
-- “Run calculator tests and summarize failures.”
-- “Add a README inside `calculator/` explaining its API.”
+```python
+abs_working_dir = os.path.abspath(working_directory)
+target = os.path.abspath(os.path.join(abs_working_dir, user_path))
+is_valid = os.path.commonpath([abs_working_dir, target]) == abs_working_dir
+```
 
----
+Operations outside `./calculator` are rejected. The sandbox path is hardcoded in `functions/call_functions.py`.
 
-## Running checks
+## Testing
 
-This repo includes script-style checks like:
-
+**Tool behavior checks:**
 ```bash
 python test_get_file_content.py
 python test_get_files_info.py
@@ -178,36 +173,24 @@ python test_write_file.py
 python test_run_python_file.py
 ```
 
-And calculator unit tests:
-
+**Calculator unit tests:**
 ```bash
 python calculator/tests.py
 ```
 
----
+## Extending
 
-## Known implementation notes
+Suggested improvements:
 
-- The main loop currently allows up to **5 model/tool turns** per request.
-- Tool outputs are sent back to Gemini as user-role content to continue reasoning.
-- Tool guardrails rely on `os.path.commonpath` path-boundary validation.
-- `run_python_file` returns both stdout and stderr in all cases, and includes non-zero exit info.
-
----
-
-## Extending this project
-
-Good next improvements:
-
-- Add structured logging instead of `print` statements.
-- Add proper automated tests (e.g., `pytest`) for function modules.
-- Expand tools (search, diff, lint, formatting, test runner abstraction).
-- Add retry/backoff and error categorization for model/tool failures.
-- Parameterize the sandbox path instead of hardcoding `./calculator`.
-- Add CI workflow for lint + tests.
-
----
+- Add structured logging instead of `print` statements
+- Add proper automated tests (e.g., `pytest`) for function modules
+- Expand tools (search, diff, lint, formatting, test runner)
+- Add retry/backoff and error categorization
+- Parameterize the sandbox path instead of hardcoding
+- Add CI workflow for lint + tests
+- Add a LICENSE file (MIT/Apache-2.0)
+- Add `.env.example` for onboarding
 
 ## License
 
-No license file is currently present in this repository. Add one (e.g., MIT/Apache-2.0) before distribution.
+This project is licensed under the [MIT License](LICENSE).
